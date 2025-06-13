@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Weather</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body, html {
+      height: 100%;
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: url('https://images.pexels.com/photos/1107717/pexels-photo-1107717.jpeg?cs=srgb&dl=pexels-fotios-photos-1107717.jpg&fm=jpg') no-repeat center center fixed;
+      background-size: cover;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .weather-card {
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+      text-align: center;
+      width: 320px;
+      color: #070707;
+    }
+
+    input {
+      padding: 10px;
+      width: 70%;
+      margin-bottom: 10px;
+      border: 1px solid #fff;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.1);
+      color: rgb(5, 5, 5);
+    }
+
+    button {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 10px;
+      background-color: #00aaff;
+      color: black;
+      cursor: pointer;
+      margin-bottom: 15px;
+    }
+
+    button:hover {
+      background-color: #008ecc;
+    }
+
+    h2, p {
+      margin: 10px 0;
+    }
+
+    .loader {
+      font-size: 1.2em;
+      color: black;
+    }
+
+    ::placeholder {
+      color: black;
+    }
+  </style>
+</head>
+<body>
+  <div class="weather-card" id="weather">
+    <input type="text" id="cityInput" placeholder="Enter city name..." />
+    <br>
+    <button onclick="searchWeather()">Search</button>
+    <div class="loader" id="status">Fetching your location weather...</div>
+  </div>
+
+  <script>
+    const apiKey = "cd8234100709ad41c363bfb73104bda2"; // Replace with your OpenWeatherMap API key
+
+    function displayWeather(data) {
+      const weatherDiv = document.getElementById('weather');
+      const { name, main, weather } = data;
+
+      weatherDiv.innerHTML = `
+        <input type="text" id="cityInput" placeholder="Enter city name..." />
+        <br>
+        <button onclick="searchWeather()">Search</button>
+        <h2>${name}</h2>
+        <p><strong>Temperature:</strong> ${main.temp} °C</p>
+        <p><strong>Condition:</strong> ${weather[0].description}</p>
+      `;
+    }
+
+    function showError(message) {
+      const weatherDiv = document.getElementById('weather');
+      weatherDiv.innerHTML = `
+        <input type="text" id="cityInput" placeholder="Enter city name..." />
+        <br>
+        <button onclick="searchWeather()">Search</button>
+        <p style="color: #ffbbbb;">${message}</p>
+      `;
+    }
+
+    function fetchWeatherByCoords(lat, lon) {
+      const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`;
+      fetch(url)
+        .then(res => res.json())
+        .then(displayWeather)
+        .catch(() => showError("Could not get weather from coordinates."));
+    }
+
+    function fetchWeatherByCity(city) {
+      const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${apiKey}`;
+      fetch(url)
+        .then(res => res.json())
+        .then(data => {
+          if (data.cod !== 200) {
+            showError(`Error: ${data.message}`);
+          } else {
+            displayWeather(data);
+          }
+        })
+        .catch(() => showError("Could not fetch data."));
+    }
+
+    function searchWeather() {
+      const city = document.getElementById('cityInput').value.trim();
+      if (city) {
+        fetchWeatherByCity(city);
+      }
+    }
+
+    // Auto-load location-based weather on start
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        position => {
+          const { latitude, longitude } = position.coords;
+          fetchWeatherByCoords(latitude, longitude);
+        },
+        () => showError("Location access denied. Enter a city above.")
+      );
+    } else {
+      showError("Geolocation not supported. Enter a city above.");
+    }
+  </script>
+</body>
+</html>
